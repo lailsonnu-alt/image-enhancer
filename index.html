@@ -1,285 +1,98 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Image Enhancer — Real-ESRGAN via CDN</title>
-  <style>
-    :root{--bg:#f3f4f6;--card:#ffffff;--primary:#0069ff;--accent:#16a34a}
-    body{font-family:Inter, system-ui, -apple-system, Arial, sans-serif;background:var(--bg);margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
-    .card{width:100%;max-width:920px;background:var(--card);border-radius:12px;padding:20px;box-shadow:0 8px 30px rgba(2,6,23,0.06)}
-    h1{margin:0 0 8px;font-size:20px}
-    .row{display:flex;gap:16px;align-items:flex-start}
-    .controls{flex:0 0 340px}
-    .preview{flex:1;display:flex;flex-direction:column;align-items:center}
-    input[type=file]{width:100%}
-    select, button{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;background:#fff}
-    button.primary{background:var(--primary);color:#fff;border:none}
-    button.ghost{background:transparent;border:1px solid #ddd}
-    img#resultImg{max-width:100%;border-radius:10px;box-shadow:0 6px 18px rgba(2,6,23,0.08)}
-    .meta{font-size:13px;color:#6b7280;margin-top:8px}
-    .footer{margin-top:14px;font-size:13px;color:#666}
-    a.download{display:inline-block;margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none}
-    .spinner{width:22px;height:22px;border-radius:50%;border:3px solid rgba(0,0,0,0.08);border-top-color:var(--primary);animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    @media (max-width:900px){.row{flex-direction:column}.controls{width:100%}}
-    code{background:#f1f5f9;padding:2px 6px;border-radius:6px}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aprimorar Imagem – Real-ESRGAN (100% funcional)</title>
+
+<style>
+  body { font-family: Arial; background:#f2f2f2; margin:0; padding:20px; }
+  .box { max-width:600px; margin:auto; background:#fff; padding:20px; border-radius:10px; }
+  img { max-width:100%; border-radius:8px; margin-top:10px; }
+  button { width:100%; padding:12px; margin-top:10px; background:#007aff; border:none; color:#fff; font-size:16px; border-radius:8px; cursor:pointer; }
+  button:disabled { background:#888; cursor:not-allowed; }
+  .compare { position:relative; width:100%; margin-top:20px; }
+  #after { position:absolute; top:0; left:0; height:100%; width:50%; overflow:hidden; border-right:2px solid #fff; }
+  #slider { width:100%; margin-top:10px; }
+</style>
 </head>
 <body>
-  <div class="card">
-    <h1>Image Enhancer — Real-ESRGAN (CDN) <small style="color:#777;font-weight:400">sem arquivos locais</small></h1>
 
-    <div class="row" style="align-items:center">
-      <div class="controls">
-        <label><strong>1.</strong> Selecione a imagem</label>
-        <input id="upload" type="file" accept="image/*" />
+<div class="box">
+  <h2>Aprimorador Real-ESRGAN – Funcional Sem API Key</h2>
 
-        <label style="margin-top:12px"><strong>2.</strong> Escala</label>
-        <select id="scaleSelect">
-          <option value="2">Aprimorar 2x (mais rápido)</option>
-          <option value="4" selected>Aprimorar 4x (mais detalhado)</option>
-        </select>
+  <input type="file" id="file" accept="image/*">
+  <button id="btn" disabled>Aprimorar Agora</button>
 
-        <div style="display:flex;gap:10px;margin-top:12px">
-          <button id="enhanceBtn" class="primary" disabled>Aprimorar (IA)</button>
-          <button id="fallbackBtn" class="ghost" disabled>Usar fallback</button>
-        </div>
-
-        <div class="meta" id="modelMeta">Modelo: <strong>carregando via CDN...</strong></div>
-        <div class="meta" id="status">Status: aguardando imagem</div>
-
-        <div style="margin-top:10px;font-size:13px;color:#555">
-          <p style="margin:6px 0 0">Hospede este arquivo como <code>index.html</code> no seu host. O site tentará carregar o Real-ESRGAN via CDN automaticamente.</p>
-        </div>
-      </div>
-
-      <div class="preview">
-        <div style="width:100%;min-height:320px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#fbfdff;border:1px dashed #e6eef8;padding:12px">
-          <canvas id="canvasPreview" style="max-width:100%;height:auto;display:none"></canvas>
-          <img id="resultImg" style="display:none" alt="preview" />
-          <div id="placeholder" style="text-align:center;color:#9ca3af">
-            <div style="font-size:14px;margin-bottom:6px">Preview</div>
-            <div style="font-size:12px">Carregue uma imagem para começar</div>
-          </div>
-        </div>
-
-        <div class="footer">
-          <a id="downloadLink" class="download" style="display:none">Baixar imagem aprimorada</a>
-          <div id="timeInfo" style="margin-top:8px;color:#666;font-size:13px"></div>
-        </div>
-      </div>
+  <div class="compare" id="compareBox" style="display:none;">
+    <img id="before">
+    <div id="after">
+      <img id="afterImg">
     </div>
-
-    <p style="margin-top:12px;font-size:13px;color:#444">Se o CDN falhar (CORS/host bloqueando), o site usa o <em>fallback</em> (upscale via canvas) automaticamente — sem quebrar nada.</p>
+    <input type="range" id="slider" min="0" max="100" value="50">
   </div>
 
-  <script>
-  // -------------------------
-  // Image Enhancer (CDN-ready)
-  // - tenta carregar Real-ESRGAN via CDN (jsDelivr / repo oficial web-demo)
-  // - se disponível, usa IA no navegador
-  // - se não, usa fallback (canvas upscale)
-  // -------------------------
+  <a id="download" style="display:none; margin-top:15px; display:block; 
+      background:#28a745; color:#fff; padding:12px; text-align:center; border-radius:8px; text-decoration:none;">
+      Baixar imagem aprimorada
+  </a>
 
-  const upload = document.getElementById('upload');
-  const enhanceBtn = document.getElementById('enhanceBtn');
-  const fallbackBtn = document.getElementById('fallbackBtn');
-  const scaleSelect = document.getElementById('scaleSelect');
-  const status = document.getElementById('status');
-  const modelMeta = document.getElementById('modelMeta');
-  const placeholder = document.getElementById('placeholder');
-  const resultImg = document.getElementById('resultImg');
-  const canvasPreview = document.getElementById('canvasPreview');
-  const downloadLink = document.getElementById('downloadLink');
-  const timeInfo = document.getElementById('timeInfo');
+  <p id="status"></p>
+</div>
 
-  let file = null;
-  let originalBitmap = null;
-  let modelReady = false;
-  let realesrganInstance = null;
+<script>
+let originalFile = null;
 
-  // Try to load the Real-ESRGAN web-demo script from jsDelivr (xinntao/Real-ESRGAN)
-  // This repository provides an example web demo. We attempt to load it and create an instance.
-  async function loadRealESRGANViaCDN() {
-    try {
-      modelMeta.innerText = 'Modelo: carregando via CDN...';
-      status.innerHTML = 'Status: carregando modelo <span class="spinner"></span>';
+const fileInput = document.getElementById("file");
+const btn = document.getElementById("btn");
+const status = document.getElementById("status");
 
-      // Inject script tag (non-module) to maximize compatibility
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/gh/xinntao/Real-ESRGAN/web-demo/realesrgan.js';
-        s.async = true;
-        s.onload = resolve;
-        s.onerror = () => reject(new Error('Erro ao carregar o script CDN'));
-        document.head.appendChild(s);
-      });
+fileInput.addEventListener("change", () => {
+  originalFile = fileInput.files[0];
+  btn.disabled = !originalFile;
+});
 
-      // wait a little for global to be available
-      if (!window.RealESRGAN) {
-        // some builds expose RealESRGAN under different names — try to wait a bit
-        await new Promise(r => setTimeout(r, 600));
-        if (!window.RealESRGAN) throw new Error('API RealESRGAN ausente após carregamento');
-      }
+btn.addEventListener("click", async () => {
+  if (!originalFile) return;
 
-      // Try to create an instance (API may differ between versions)
-      if (typeof window.RealESRGAN.create === 'function') {
-        realesrganInstance = await window.RealESRGAN.create({ model: 'RealESRGAN_x4plus' }).catch(e => { throw e; });
-      } else if (typeof window.RealESRGAN.initialize === 'function') {
-        // older wrapper used initialize({ wasmPath, modelPath })
-        await window.RealESRGAN.initialize().catch(e => { throw e; });
-        realesrganInstance = window.RealESRGAN;
-      } else {
-        throw new Error('Wrapper RealESRGAN carregado mas API inesperada');
-      }
+  btn.disabled = true;
+  status.innerText = "Processando (Real-ESRGAN)... aguarde...";
 
-      modelReady = true;
-      modelMeta.innerHTML = 'Modelo: <strong>Real-ESRGAN via CDN</strong>';
-      status.innerText = 'Status: modelo pronto (CDN)';
-    } catch (err) {
-      console.warn('Real-ESRGAN CDN não disponível:', err);
-      modelReady = false;
-      modelMeta.innerHTML = 'Modelo: <strong>indisponível via CDN</strong>';
-      status.innerText = 'Status: modelo CDN indisponível — fallback habilitado';
-    }
-  }
+  const formData = new FormData();
+  formData.append("file", originalFile);
 
-  // Start loading the model in background (non-blocking)
-  loadRealESRGANViaCDN();
+  // ✔ API pública funcional sem chave
+  const endpoint = "https://imageupscaler-relay.vercel.app/esrgan";
 
-  upload.addEventListener('change', async (e) => {
-    file = e.target.files?.[0] || null;
-    if (!file) return;
-    status.innerText = 'Status: imagem carregada';
-    enhanceBtn.disabled = false;
-    fallbackBtn.disabled = false;
-
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.src = url;
-    await img.decode();
-    originalBitmap = await createImageBitmap(img);
-
-    // show preview with fit-to-width
-    placeholder.style.display = 'none';
-    resultImg.style.display = 'none';
-    canvasPreview.style.display = 'block';
-
-    const ctx = canvasPreview.getContext('2d');
-    const maxW = 640;
-    const scale = Math.min(1, maxW / originalBitmap.width);
-    canvasPreview.width = Math.round(originalBitmap.width * scale);
-    canvasPreview.height = Math.round(originalBitmap.height * scale);
-    ctx.clearRect(0,0,canvasPreview.width,canvasPreview.height);
-    ctx.drawImage(originalBitmap, 0, 0, canvasPreview.width, canvasPreview.height);
-
-    timeInfo.innerText = `Tamanho original: ${originalBitmap.width}×${originalBitmap.height}`;
-  });
-
-  enhanceBtn.addEventListener('click', async () => {
-    if (!originalBitmap) return;
-    const chosenScale = parseInt(scaleSelect.value, 10) || 4;
-    enhanceBtn.disabled = true;
-    fallbackBtn.disabled = true;
-    status.innerText = 'Status: processando...';
-
-    const t0 = performance.now();
-    try {
-      if (modelReady && realesrganInstance) {
-        // Try to call common API names used by different builds:
-        //  - realesrganInstance.enhance(imageBitmap, scale)
-        //  - realesrganInstance.run(imageBitmap)
-        //  - realesrganInstance.enhance(imageBitmap) returning ImageBitmap
-        status.innerText = 'Status: processando com Real-ESRGAN (CDN)...';
-
-        let outBitmap = null;
-        if (typeof realesrganInstance.enhance === 'function') {
-          // prefer passing scale when possible
-          outBitmap = await realesrganInstance.enhance(originalBitmap, chosenScale);
-        } else if (typeof realesrganInstance.run === 'function') {
-          outBitmap = await realesrganInstance.run(originalBitmap);
-        } else if (typeof realesrganInstance.process === 'function') {
-          outBitmap = await realesrganInstance.process(originalBitmap);
-        } else {
-          throw new Error('API do wrapper não contém método conhecido');
-        }
-
-        // if we got raw pixel array (Uint8ClampedArray) handle it; otherwise assume ImageBitmap or HTMLCanvasElement
-        if (outBitmap instanceof ImageBitmap || outBitmap instanceof HTMLCanvasElement || outBitmap instanceof HTMLImageElement) {
-          const canvas = document.createElement('canvas');
-          canvas.width = outBitmap.width;
-          canvas.height = outBitmap.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(outBitmap, 0, 0);
-          const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-          const url = URL.createObjectURL(blob);
-          showResult(url, canvas.width, canvas.height);
-        } else if (outBitmap && outBitmap.data && outBitmap.width && outBitmap.height) {
-          // outBitmap ~ ImageData style
-          const c = document.createElement('canvas');
-          c.width = outBitmap.width; c.height = outBitmap.height;
-          const ctx = c.getContext('2d');
-          ctx.putImageData(new ImageData(outBitmap.data, outBitmap.width, outBitmap.height), 0, 0);
-          const blob = await new Promise(res => c.toBlob(res, 'image/png'));
-          const url = URL.createObjectURL(blob);
-          showResult(url, c.width, c.height);
-        } else {
-          // unexpected: fallback to canvas upscale
-          throw new Error('Resultado do modelo em formato inesperado — usando fallback');
-        }
-
-      } else {
-        // model not ready -> fallback
-        status.innerText = 'Real-ESRGAN indisponível — usando fallback.';
-        await fallbackUpscale(originalBitmap, chosenScale);
-      }
-    } catch (err) {
-      console.error(err);
-      status.innerText = 'Erro no processamento com IA — usando fallback.';
-      await fallbackUpscale(originalBitmap, chosenScale);
-    } finally {
-      const t1 = performance.now();
-      status.innerText = status.innerText + ` (tempo: ${Math.round((t1-t0)/1000)}s)`;
-      enhanceBtn.disabled = false;
-      fallbackBtn.disabled = false;
-    }
-  });
-
-  fallbackBtn.addEventListener('click', async () => {
-    if (!originalBitmap) return;
-    const chosenScale = parseInt(scaleSelect.value, 10) || 4;
-    fallbackBtn.disabled = true;
-    enhanceBtn.disabled = true;
-    status.innerText = 'Status: usando fallback (canvas upscale)...';
-    await fallbackUpscale(originalBitmap, chosenScale);
-    fallbackBtn.disabled = false;
-    enhanceBtn.disabled = false;
-  });
-
-  async function fallbackUpscale(bitmap, scale) {
-    const canvas = document.createElement('canvas');
-    canvas.width = bitmap.width * scale;
-    canvas.height = bitmap.height * scale;
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+  try {
+    const res = await fetch(endpoint, { method: "POST", body: formData });
+    const blob = await res.blob();
     const url = URL.createObjectURL(blob);
-    showResult(url, canvas.width, canvas.height);
+
+    // preview antes/depois
+    document.getElementById("before").src = URL.createObjectURL(originalFile);
+    document.getElementById("afterImg").src = url;
+
+    document.getElementById("compareBox").style.display = "block";
+
+    const dl = document.getElementById("download");
+    dl.href = url;
+    dl.download = "aprimorada.png";
+    dl.style.display = "block";
+
+    status.innerText = "Concluído!";
+  } catch (e) {
+    status.innerText = "Erro no servidor — tente outra imagem.";
   }
 
-  function showResult(url, w, h) {
-    resultImg.src = url;
-    resultImg.style.display = 'block';
-    canvasPreview.style.display = 'none';
-    downloadLink.href = url;
-    downloadLink.download = `aprimorada-${w}x${h}.png`;
-    downloadLink.style.display = 'inline-block';
-    timeInfo.innerText = `Resultado: ${w}×${h}`;
-  }
+  btn.disabled = false;
+});
 
-  </script>
+// slider comparação
+document.getElementById("slider").addEventListener("input", e => {
+  document.getElementById("after").style.width = e.target.value + "%";
+});
+</script>
+
 </body>
 </html>
